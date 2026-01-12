@@ -3,7 +3,7 @@ import * as React from 'react';
 import { useState, useRef, useEffect } from 'react';
 import { interviewService } from './services/geminiService';
 import { Message, InterviewTopic, CompetencyScores } from './types';
-import { INITIAL_GREETING } from './constants';
+import { INITIAL_GREETING, INITIAL_SCORES, INITIAL_SALARY } from './constants';
 import InterviewerAvatar from './components/InterviewerAvatar';
 import { 
   Send, 
@@ -12,15 +12,19 @@ import {
   TrendingUp,
   Activity,
   ShieldAlert,
-  Search,
-  Binary,
   Maximize2,
   BrainCircuit,
   LayoutDashboard,
   Zap,
   Target,
   ExternalLink,
-  ShieldCheck
+  ShieldCheck,
+  Database,
+  BarChart3,
+  Lightbulb,
+  Cpu,
+  Coins,
+  Users
 } from 'lucide-react';
 
 /**
@@ -43,15 +47,9 @@ const App = () => {
   const [isThinking, setIsThinking] = useState(false);
   const [currentTopic, setCurrentTopic] = useState<InterviewTopic>(InterviewTopic.LEAN_PRODUCTION_TPS);
   const [showMenu, setShowMenu] = useState(false);
-  const [scores, setScores] = useState<CompetencyScores>({
-    modeling: 20,
-    data: 20,
-    lean: 20,
-    finance: 20,
-    leadership: 20,
-    optimization: 20
-  });
-  const [currentSalary, setCurrentSalary] = useState(0);
+  const [scores, setScores] = useState<CompetencyScores>(INITIAL_SCORES);
+  const [currentSalary, setCurrentSalary] = useState(INITIAL_SALARY); 
+  const [isResetting, setIsResetting] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -86,7 +84,7 @@ const App = () => {
 
   const parsePerformance = (text: string) => {
     const scoreMatch = text.match(/\[SCORE:\s*([^\]]+)\]/);
-    const salaryMatch = text.match(/\[ESTIMATED_SALARY:\s*(\d+)\]/);
+    const salaryDeltaMatch = text.match(/\[SALARY_DELTA:\s*([+-])(\d+)\]/);
 
     if (scoreMatch) {
       const updates = scoreMatch[1].split(',').map(s => s.trim());
@@ -108,11 +106,16 @@ const App = () => {
       });
     }
 
-    if (salaryMatch) {
-      setCurrentSalary(parseInt(salaryMatch[1]));
+    if (salaryDeltaMatch) {
+      const op = salaryDeltaMatch[1];
+      const delta = parseInt(salaryDeltaMatch[2]);
+      setCurrentSalary(prev => {
+        const next = op === '+' ? prev + delta : prev - delta;
+        return Math.max(0, next);
+      });
     }
 
-    return text.replace(/\[SCORE:[^\]]+\]/g, '').replace(/\[ESTIMATED_SALARY:[^\]]+\]/g, '').trim();
+    return text.replace(/\[SCORE:[^\]]+\]/g, '').replace(/\[SALARY_DELTA:[^\]]+\]/g, '').trim();
   };
 
   const handleAISpeak = async (prompt: string, historyForContext: Message[]) => {
@@ -165,23 +168,65 @@ const App = () => {
     await handleAISpeak(userMsg, history);
   };
 
+  const handleReset = () => {
+    setIsResetting(true);
+    setTimeout(() => {
+      setMessages([{ role: 'interviewer', content: INITIAL_GREETING }]);
+      setScores(INITIAL_SCORES);
+      setCurrentSalary(INITIAL_SALARY);
+      setCurrentTopic(InterviewTopic.LEAN_PRODUCTION_TPS);
+      setInputText('');
+      setIsThinking(false);
+      setShowMenu(false);
+      setIsResetting(false);
+    }, 400);
+  };
+
   const selectTopic = async (topic: InterviewTopic) => {
     const history = [...messages];
     setCurrentTopic(topic);
     setMessages(prev => [...prev, { role: 'candidate', content: `[战场切换] 部署战术场景: ${topic}` }]);
-    await handleAISpeak(`已加载场景『${topic}』。请作为面试官，针对该领域发布首个高难度的实战指令，考核我的能力。`, history);
+    await handleAISpeak(`已加载场景『${topic}』。请作为面试官，针对该领域发布首个高难度的实战指令，考核我的能力。重点考察我的技术底层原理与管理平衡能力。`, history);
   };
 
   const triggerAction = async (actionType: 'answer' | 'deeper' | 'next' | 'reset') => {
     setShowMenu(false);
+    if (actionType === 'reset') {
+      handleReset();
+      return;
+    }
     let prompt = "";
     switch(actionType) {
-      case 'answer': prompt = "请给出针对当前场景的最优全栈解法，包含精益、运筹、自动化及安全视角，以供我学习。"; break;
-      case 'deeper': prompt = "请根据我目前的回答，从更底层的系统架构、控制算法、安全机制或管理平衡点抛出一个挑战性追问。"; break;
-      case 'next': prompt = "该环节已掌握，请进入面试的下一个难度层级。"; break;
-      case 'reset': window.location.reload(); return;
+      case 'answer': prompt = "请给出针对当前场景的最优全栈解法，包含精益、运筹、自动化、网络安全、数据架构及财务视角，以供我学习。"; break;
+      case 'deeper': prompt = "请根据我目前的回答，从更底层的系统架构（如 OPC UA/MQTT 细节）、控制算法收敛性、OT 安全机制或管理平衡点抛出一个极具压迫性的追问。"; break;
+      case 'next': prompt = "该环节已完成。请直接切换至下一个更高难度的逻辑挑战，跳过简单的寒暄。"; break;
     }
     await handleAISpeak(prompt, [...messages]);
+  };
+
+  // Icon mapping for competencies
+  const getCompIcon = (key: string) => {
+    switch(key) {
+      case 'modeling': return <BarChart3 size={12} />;
+      case 'data': return <Database size={12} />;
+      case 'lean': return <Lightbulb size={12} />;
+      case 'finance': return <Coins size={12} />;
+      case 'leadership': return <Users size={12} />;
+      case 'optimization': return <Cpu size={12} />;
+      default: return <Activity size={12} />;
+    }
+  };
+
+  const getCompLabel = (key: string) => {
+    switch(key) {
+      case 'modeling': return '生产建模';
+      case 'data': return '数字架构';
+      case 'lean': return '精益审计';
+      case 'finance': return '财务决策';
+      case 'leadership': return '组织领导';
+      case 'optimization': return '运筹算法';
+      default: return key;
+    }
   };
 
   if (hasKey === false) {
@@ -243,25 +288,29 @@ const App = () => {
         </div>
 
         <div className="flex items-center space-x-3">
-            <button onClick={() => triggerAction('reset')} className="p-2 bg-white/5 hover:bg-white/10 rounded-xl text-slate-400 transition-all border border-white/5 group">
-                <RotateCcw size={16} className="group-hover:rotate-180 transition-transform duration-500" />
+            <button onClick={handleReset} className="p-2 bg-white/5 hover:bg-white/10 rounded-xl text-slate-400 transition-all border border-white/5 group" title="重启面试：清空所有状态">
+                <RotateCcw size={16} className={`${isResetting ? 'animate-spin' : 'group-hover:rotate-180 transition-transform duration-500'}`} />
             </button>
         </div>
       </header>
 
       <main className="flex-1 flex flex-col lg:flex-row overflow-hidden relative">
-        {/* Left Sidebar: Highly Detailed Scenario List */}
-        <div className="w-full lg:w-64 xl:w-80 bg-slate-950/40 border-r border-white/5 p-6 flex flex-col space-y-8 z-20 overflow-y-auto custom-scrollbar shadow-2xl">
+        {/* Left Sidebar: Detailed Analytics & Scenarios */}
+        <div className={`w-full lg:w-80 xl:w-[420px] bg-slate-950/40 border-r border-white/5 p-6 flex flex-col space-y-8 z-20 overflow-y-auto custom-scrollbar shadow-2xl transition-opacity duration-300 ${isResetting ? 'opacity-0' : 'opacity-100'}`}>
+            {/* Radar Analytics Section */}
             <div>
                 <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-4 flex items-center">
                   <LayoutDashboard size={12} className="mr-2" />
-                  <span>Radar Analytics</span>
+                  <span>Radar Analytics (胜任力分析)</span>
                 </h3>
                 <div className="space-y-4">
                     {(Object.entries(scores) as [string, number][]).map(([key, value]) => (
                         <div key={key} className="space-y-1.5">
                             <div className="flex justify-between text-[9px] font-bold uppercase tracking-tighter">
-                                <span className="text-slate-500">{key}</span>
+                                <div className="flex items-center text-slate-400">
+                                   <span className="mr-1.5 text-blue-500/80">{getCompIcon(key)}</span>
+                                   <span>{getCompLabel(key)}</span>
+                                </div>
                                 <span className={`text-blue-400 font-mono`}>{value}%</span>
                             </div>
                             <div className="h-1 w-full bg-slate-800/50 rounded-full overflow-hidden">
@@ -275,42 +324,31 @@ const App = () => {
                 </div>
             </div>
 
+            {/* Tactical Scenarios Section */}
             <div className="pt-6 border-t border-white/5">
                 <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-4 flex items-center">
                   <Target size={12} className="mr-2" />
-                  <span>Tactical Scenarios</span>
+                  <span>Tactical Scenarios (战术场景库 - 35+)</span>
                 </h3>
-                <div className="space-y-1.5">
+                <div className="space-y-2 pb-6">
                     {Object.values(InterviewTopic).map(topic => (
                         <button 
                             key={topic}
                             onClick={() => selectTopic(topic)}
-                            className={`w-full text-left text-[9px] p-3 rounded-xl border transition-all font-semibold flex items-start space-x-3 group
+                            className={`w-full text-left text-[10px] p-3 rounded-xl border transition-all font-semibold flex items-start space-x-3 group
                                 ${currentTopic === topic 
                                     ? `bg-blue-600/10 border-blue-500/50 text-white shadow-lg` 
                                     : 'border-white/5 text-slate-500 hover:text-slate-300 hover:bg-white/5'}`}
                         >
-                            <div className={`mt-0.5 w-1 h-1 rounded-full transition-all ${currentTopic === topic ? 'bg-blue-500' : 'bg-slate-800'}`}></div>
+                            <div className={`mt-1.5 w-1.5 h-1.5 rounded-full shrink-0 transition-all ${currentTopic === topic ? 'bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.5)]' : 'bg-slate-800'}`}></div>
                             <span className="leading-relaxed">{topic}</span>
                         </button>
                     ))}
                 </div>
             </div>
-
-            <div className="mt-auto bg-slate-900/60 border border-white/5 rounded-2xl p-4 shadow-inner">
-               <div className="flex items-center space-x-2 mb-3">
-                  <ShieldCheck size={12} className="text-blue-500" />
-                  <span className="text-[9px] font-black text-blue-500 uppercase tracking-widest">DR_LU_PROCESSOR</span>
-               </div>
-               <div className="space-y-1">
-                  <div className="flex justify-between text-[8px] font-mono text-slate-600"><span>OT_SECURITY:</span> <span className="text-green-500">MONITORING</span></div>
-                  <div className="flex justify-between text-[8px] font-mono text-slate-600"><span>PLC_LOGIC:</span> <span className="text-blue-500">SYNCED</span></div>
-                  <div className="flex justify-between text-[8px] font-mono text-slate-600"><span>LEAN_SCAN:</span> <span className="text-emerald-500">ACTIVE</span></div>
-               </div>
-            </div>
         </div>
 
-        <div className="flex-1 relative flex flex-col items-center justify-center p-8 z-50">
+        <div className={`flex-1 relative flex flex-col items-center justify-center p-8 z-50 transition-all duration-500 ${isResetting ? 'scale-95 opacity-0' : 'scale-100 opacity-100'}`}>
           <div className="relative mb-12 flex flex-col items-center">
             <InterviewerAvatar isThinking={isThinking} onClick={() => setShowMenu(!showMenu)} />
             
@@ -328,7 +366,7 @@ const App = () => {
                                 <Maximize2 size={16} className={`text-blue-500`} />
                                 <div>
                                     <p className="text-xs font-bold text-white uppercase leading-tight tracking-tight">告诉答案</p>
-                                    <p className="text-[8px] text-slate-500 mt-0.5 uppercase tracking-tighter font-mono italic">Full IE Spectrum Solution</p>
+                                    <p className="text-[8px] text-slate-500 mt-0.5 uppercase tracking-tighter font-mono italic">以面试代学习：查看全栈解法</p>
                                 </div>
                             </div>
                         </button>
@@ -339,18 +377,18 @@ const App = () => {
                                 <Zap size={16} className="text-slate-400" />
                                 <div>
                                     <p className="text-xs font-bold text-white uppercase leading-tight tracking-tight">深入追问</p>
-                                    <p className="text-[8px] text-slate-500 mt-0.5 uppercase tracking-tighter font-mono italic">Architecture & Logic Deep-dive</p>
+                                    <p className="text-[8px] text-slate-500 mt-0.5 uppercase tracking-tighter font-mono italic">针对当前逻辑进行底层拆解</p>
                                 </div>
                             </div>
                         </button>
 
-                        <button onClick={() => triggerAction('next')} className="w-full text-left p-3 bg-red-500/5 hover:bg-red-600/20 rounded-2xl transition-all border border-red-500/20 group relative overflow-hidden mt-4">
+                        <button onClick={handleReset} className="w-full text-left p-3 bg-red-500/5 hover:bg-red-600/20 rounded-2xl transition-all border border-red-500/20 group relative overflow-hidden mt-4">
                             <div className="absolute top-0 left-0 w-1 h-full bg-red-500 transform -translate-x-full group-hover:translate-x-0 transition-transform"></div>
                             <div className="flex items-center space-x-3">
                                 <ShieldAlert size={16} className="text-red-500" />
                                 <div>
-                                    <p className="text-xs font-bold text-red-400 uppercase leading-tight tracking-tight">下一个挑战</p>
-                                    <p className="text-[8px] text-red-700/60 mt-0.5 uppercase tracking-tighter font-mono italic">Escalate Interview Difficulty</p>
+                                    <p className="text-xs font-bold text-red-400 uppercase leading-tight tracking-tight">重启面试</p>
+                                    <p className="text-[8px] text-red-700/60 mt-0.5 uppercase tracking-tighter font-mono italic">Reset Strategic Environment</p>
                                 </div>
                             </div>
                         </button>
@@ -365,7 +403,7 @@ const App = () => {
           </div>
         </div>
 
-        <div className="w-full lg:w-[400px] xl:w-[480px] bg-black/80 backdrop-blur-3xl border-l border-white/5 flex flex-col z-30 shadow-[-10px_0_40px_rgba(0,0,0,0.5)]">
+        <div className={`w-full lg:w-[400px] xl:w-[480px] bg-black/80 backdrop-blur-3xl border-l border-white/5 flex flex-col z-30 shadow-[-10px_0_40px_rgba(0,0,0,0.5)] transition-all duration-300 ${isResetting ? 'opacity-0 translate-x-10' : 'opacity-100 translate-x-0'}`}>
           <div className={`p-4 border-b border-white/5 flex items-center bg-slate-900/40 justify-between`}>
              <div className="flex items-center">
                 <Terminal size={14} className={`text-blue-500 mr-2`} />
@@ -412,7 +450,7 @@ const App = () => {
                   <div className="flex items-center space-x-4">
                     <span className="text-[9px] text-slate-700 font-mono tracking-tighter uppercase font-bold">READY_TO_EXECUTE</span>
                   </div>
-                  <button onClick={handleSend} disabled={!inputText.trim() || isThinking}
+                  <button onClick={handleSend} disabled={!inputText.trim() || isThinking || isResetting}
                     className={`flex items-center space-x-3 px-10 py-2.5 rounded-xl font-black text-[10px] tracking-widest uppercase transition-all duration-300
                     ${inputText.trim() ? `bg-blue-600 text-white hover:bg-blue-500 shadow-[0_0_20px_rgba(37,99,235,0.3)]` : 'bg-slate-900 text-slate-700 cursor-not-allowed border border-white/5'}`}>
                     <span>Execute Stream</span>
