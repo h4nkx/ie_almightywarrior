@@ -37,6 +37,7 @@ const App = () => {
   ]);
   const [inputText, setInputText] = useState('');
   const [isThinking, setIsThinking] = useState(false);
+  const [isResetting, setIsResetting] = useState(false);
   const [currentTopic, setCurrentTopic] = useState<InterviewTopic>(InterviewTopic.IT_IE_MES_ERP_INTEGRATION);
   const [showMenu, setShowMenu] = useState(false);
   const [scores, setScores] = useState<CompetencyScores>(INITIAL_SCORES);
@@ -112,7 +113,7 @@ const App = () => {
   };
 
   const handleSend = async () => {
-    if (!inputText.trim() || isThinking) return;
+    if (!inputText.trim() || isThinking || isResetting) return;
     const userMsg = inputText;
     const history = [...messages]; 
     setInputText('');
@@ -121,7 +122,7 @@ const App = () => {
   };
 
   const selectTopic = async (topic: InterviewTopic) => {
-    if (isThinking) return;
+    if (isThinking || isResetting) return;
     const history = [...messages];
     setCurrentTopic(topic);
     setMessages(prev => [...prev, { role: 'candidate', content: `[战场切换] 部署战术场景: ${topic}` }]);
@@ -138,6 +139,22 @@ const App = () => {
     await handleAISpeak(prompt, [...messages]);
   };
 
+  const handleReset = () => {
+    if (isResetting) return;
+    setIsResetting(true);
+    
+    // 延迟重置状态，配合淡出淡入动画
+    setTimeout(() => {
+      setMessages([{ role: 'interviewer', content: INITIAL_GREETING }]);
+      setScores(INITIAL_SCORES);
+      setCurrentSalary(INITIAL_SALARY);
+      // 给数据重置留一点静止时间
+      setTimeout(() => {
+        setIsResetting(false);
+      }, 300);
+    }, 800);
+  };
+
   const getCompIcon = (key: string) => {
     switch(key) {
       case 'modeling': return <BarChart3 size={14} />;
@@ -151,9 +168,17 @@ const App = () => {
   };
 
   return (
-    <div className="h-screen w-screen bg-[#020617] flex flex-col font-sans overflow-hidden text-slate-100 selection:bg-blue-500/30">
+    <div className={`h-screen w-screen bg-[#020617] flex flex-col font-sans overflow-hidden text-slate-100 selection:bg-blue-500/30 relative`}>
       
-      <header className="flex items-center justify-between px-6 py-3 bg-slate-900/60 border-b border-blue-500/10 z-[60] backdrop-blur-3xl shadow-2xl">
+      {/* Reset Smooth Overlay */}
+      <div className={`absolute inset-0 z-[100] bg-[#020617] transition-all duration-700 pointer-events-none flex flex-col items-center justify-center ${isResetting ? 'opacity-100' : 'opacity-0 scale-105'}`}>
+        <div className="flex flex-col items-center space-y-6">
+            <div className="w-16 h-16 border-2 border-blue-500/20 border-t-blue-500 rounded-full animate-spin"></div>
+            <div className="text-blue-400 font-mono text-[10px] tracking-[0.6em] animate-pulse uppercase">Tactical Neural Resetting...</div>
+        </div>
+      </div>
+
+      <header className={`flex items-center justify-between px-6 py-3 bg-slate-900/60 border-b border-blue-500/10 z-[60] backdrop-blur-3xl shadow-2xl transition-all duration-700 ${isResetting ? 'opacity-0 -translate-y-4' : 'opacity-100 translate-y-0'}`}>
         <div className="flex items-center space-x-6">
           <div className="flex items-center space-x-3">
             <div className="p-2 rounded-lg bg-blue-600/20 border border-blue-500/20">
@@ -173,20 +198,27 @@ const App = () => {
 
         <div className="flex items-center space-x-4">
           <button 
-            onClick={() => {
-              setMessages([{ role: 'interviewer', content: INITIAL_GREETING }]);
-              setScores(INITIAL_SCORES);
-              setCurrentSalary(INITIAL_SALARY);
-            }} 
+            onClick={handleReset} 
+            disabled={isResetting}
             title="重启系统审计"
-            className="p-3 bg-white/5 rounded-2xl text-slate-400 border border-white/10 hover:bg-blue-600/10 hover:text-blue-400 hover:border-blue-500/30 transition-all duration-700 active:scale-90 shadow-lg hover:shadow-blue-500/5 group animate-soft-pulse"
+            className={`p-3 rounded-2xl border transition-all duration-500 active:scale-90 shadow-lg relative overflow-hidden group ${
+              isResetting 
+              ? 'bg-blue-500/20 text-blue-300 border-blue-500/50 cursor-wait' 
+              : 'bg-white/5 text-slate-400 border-white/10 hover:bg-blue-600/10 hover:text-blue-400 hover:border-blue-500/30 hover:shadow-blue-500/10'
+            }`}
           >
-            <RotateCcw size={16} className="group-hover:rotate-180 transition-transform duration-1000 ease-in-out" />
+            <RotateCcw 
+              size={16} 
+              className={`${isResetting ? 'animate-spin-fast' : 'group-hover:rotate-180 transition-transform duration-700 ease-in-out'}`} 
+            />
+            {/* Inner Glow Effect */}
+            {!isResetting && <div className="absolute inset-0 bg-blue-500/0 group-hover:bg-blue-500/5 transition-colors duration-700"></div>}
+            {isResetting && <div className="absolute inset-0 bg-blue-500/20 animate-pulse"></div>}
           </button>
         </div>
       </header>
 
-      <main className="flex-1 flex overflow-hidden relative">
+      <main className={`flex-1 flex overflow-hidden relative transition-all duration-700 ${isResetting ? 'opacity-0 scale-95 blur-lg' : 'opacity-100 scale-100 blur-0'}`}>
         {/* Sidebar */}
         <div className="w-80 xl:w-[420px] bg-slate-950/20 border-r border-white/5 p-8 flex flex-col space-y-10 z-20 overflow-y-auto custom-scrollbar">
             <section className="space-y-6">
@@ -206,7 +238,7 @@ const App = () => {
                             </div>
                             <div className="h-1 w-full bg-slate-800/30 rounded-full overflow-hidden border border-white/5">
                                 <div 
-                                  className="h-full transition-all duration-1000 bg-blue-600 shadow-[0_0_10px_rgba(37,99,235,0.3)]" 
+                                  className={`h-full transition-all duration-1000 bg-blue-600 shadow-[0_0_10px_rgba(37,99,235,0.3)]`} 
                                   style={{ width: `${value}%` }}
                                 ></div>
                             </div>
@@ -295,13 +327,13 @@ const App = () => {
                  onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
                  placeholder="陈述你的战术见解..."
                  className="bg-transparent text-slate-200 text-sm p-4 outline-none resize-none min-h-[100px] custom-scrollbar placeholder:opacity-20"
-                 disabled={isThinking}
+                 disabled={isThinking || isResetting}
                />
                <div className="flex justify-end p-2 border-t border-white/5 mt-2">
                   <button 
                     onClick={handleSend} 
-                    disabled={!inputText.trim() || isThinking} 
-                    className={`group flex items-center space-x-3 px-10 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all ${inputText.trim() ? 'bg-blue-600 text-white shadow-xl' : 'bg-slate-800 text-slate-600'}`}
+                    disabled={!inputText.trim() || isThinking || isResetting} 
+                    className={`group flex items-center space-x-3 px-10 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all ${inputText.trim() && !isResetting ? 'bg-blue-600 text-white shadow-xl' : 'bg-slate-800 text-slate-600 cursor-not-allowed'}`}
                   >
                     <span>发送汇报</span>
                     <Send size={14} className="group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
@@ -324,6 +356,14 @@ const App = () => {
         }
         .animate-soft-pulse {
           animation: soft-pulse 4s ease-in-out infinite;
+        }
+
+        @keyframes spin-fast {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(1080deg); }
+        }
+        .animate-spin-fast {
+          animation: spin-fast 1.2s cubic-bezier(0.65, 0, 0.35, 1);
         }
       `}</style>
     </div>
