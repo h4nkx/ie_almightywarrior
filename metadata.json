@@ -1,7 +1,5 @@
 {
   "name": "IE Mastermind Interviewer",
   "description": "A high-stakes simulated interview for elite Industrial Engineers, blending deep technical IE knowledge with management and full-stack tech expertise.",
-  "requestFramePermissions": [
-    "microphone"
-  ]
+  "requestFramePermissions": []
 }
