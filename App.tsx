@@ -125,16 +125,16 @@ const App = () => {
     if (isThinking || isResetting) return;
     const history = [...messages];
     setCurrentTopic(topic);
-    setMessages(prev => [...prev, { role: 'candidate', content: `[战场切换] 部署战术场景: ${topic}` }]);
-    await handleAISpeak(`已加载场景『${topic}』。请开始提问。`, history);
+    setMessages(prev => [...prev, { role: 'candidate', content: `[评估领域切换] 当前选定场景: ${topic}` }]);
+    await handleAISpeak(`已加载案例场景『${topic}』。请开始你的逻辑陈述。`, history);
   };
 
   const triggerAction = async (actionType: 'answer' | 'deeper') => {
     setShowMenu(false);
     let prompt = "";
     switch(actionType) {
-      case 'answer': prompt = "请给出针对当前场景的最优全栈解法建议。"; break;
-      case 'deeper': prompt = "请针对当前逻辑进行极度深化的拆解。"; break;
+      case 'answer': prompt = "请给出针对当前场景的行业最优解法方案建议。"; break;
+      case 'deeper': prompt = "请针对当前方案的技术实现细节进行深度拆解。"; break;
     }
     await handleAISpeak(prompt, [...messages]);
   };
@@ -143,12 +143,10 @@ const App = () => {
     if (isResetting) return;
     setIsResetting(true);
     
-    // 延迟重置状态，配合淡出淡入动画
     setTimeout(() => {
       setMessages([{ role: 'interviewer', content: INITIAL_GREETING }]);
       setScores(INITIAL_SCORES);
       setCurrentSalary(INITIAL_SALARY);
-      // 给数据重置留一点静止时间
       setTimeout(() => {
         setIsResetting(false);
       }, 300);
@@ -168,13 +166,13 @@ const App = () => {
   };
 
   return (
-    <div className={`h-screen w-screen bg-[#020617] flex flex-col font-sans overflow-hidden text-slate-100 selection:bg-blue-500/30 relative`}>
+    <div className={`h-screen w-screen bg-[#020617] flex flex-col font-sans overflow-hidden text-slate-100 selection:bg-blue-500/30 relative transition-all duration-700`}>
       
       {/* Reset Smooth Overlay */}
-      <div className={`absolute inset-0 z-[100] bg-[#020617] transition-all duration-700 pointer-events-none flex flex-col items-center justify-center ${isResetting ? 'opacity-100' : 'opacity-0 scale-105'}`}>
+      <div className={`absolute inset-0 z-[100] bg-[#020617] transition-all duration-1000 pointer-events-none flex flex-col items-center justify-center ${isResetting ? 'opacity-100' : 'opacity-0 scale-105'}`}>
         <div className="flex flex-col items-center space-y-6">
             <div className="w-16 h-16 border-2 border-blue-500/20 border-t-blue-500 rounded-full animate-spin"></div>
-            <div className="text-blue-400 font-mono text-[10px] tracking-[0.6em] animate-pulse uppercase">Tactical Neural Resetting...</div>
+            <div className="text-blue-400 font-mono text-[10px] tracking-[1em] animate-pulse uppercase">Initializing Expert Environment...</div>
         </div>
       </div>
 
@@ -184,13 +182,13 @@ const App = () => {
             <div className="p-2 rounded-lg bg-blue-600/20 border border-blue-500/20">
               <BrainCircuit className="text-blue-400 w-5 h-5" />
             </div>
-            <h1 className="text-xs font-black text-white tracking-[0.3em] uppercase">IE RANGE V2.0</h1>
+            <h1 className="text-xs font-black text-white tracking-[0.3em] uppercase">IE EXPERT AUDIT V2.0</h1>
           </div>
           
           <div className="bg-black/40 border border-white/5 px-4 py-1.5 rounded-full flex items-center space-x-3 shadow-inner">
             <TrendingUp size={14} className="text-emerald-500" />
             <div className="flex flex-col">
-              <span className="text-[8px] text-slate-500 font-bold uppercase tracking-widest leading-none mb-1 opacity-60">Worth</span>
+              <span className="text-[8px] text-slate-500 font-bold uppercase tracking-widest leading-none mb-1 opacity-60">Offer Evaluation</span>
               <span className="text-base font-mono font-bold text-white tracking-tighter leading-none">${currentSalary.toLocaleString()}</span>
             </div>
           </div>
@@ -200,7 +198,7 @@ const App = () => {
           <button 
             onClick={handleReset} 
             disabled={isResetting}
-            title="重启系统审计"
+            title="重置面试流程"
             className={`p-3 rounded-2xl border transition-all duration-500 active:scale-90 shadow-lg relative overflow-hidden group ${
               isResetting 
               ? 'bg-blue-500/20 text-blue-300 border-blue-500/50 cursor-wait' 
@@ -211,20 +209,19 @@ const App = () => {
               size={16} 
               className={`${isResetting ? 'animate-spin-fast' : 'group-hover:rotate-180 transition-transform duration-700 ease-in-out'}`} 
             />
-            {/* Inner Glow Effect */}
             {!isResetting && <div className="absolute inset-0 bg-blue-500/0 group-hover:bg-blue-500/5 transition-colors duration-700"></div>}
             {isResetting && <div className="absolute inset-0 bg-blue-500/20 animate-pulse"></div>}
           </button>
         </div>
       </header>
 
-      <main className={`flex-1 flex overflow-hidden relative transition-all duration-700 ${isResetting ? 'opacity-0 scale-95 blur-lg' : 'opacity-100 scale-100 blur-0'}`}>
+      <main className={`flex-1 flex overflow-hidden relative transition-all duration-1000 ${isResetting ? 'opacity-0 scale-95 blur-xl' : 'opacity-100 scale-100 blur-0'}`}>
         {/* Sidebar */}
         <div className="w-80 xl:w-[420px] bg-slate-950/20 border-r border-white/5 p-8 flex flex-col space-y-10 z-20 overflow-y-auto custom-scrollbar">
             <section className="space-y-6">
                 <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] flex items-center opacity-70">
                   <LayoutDashboard size={12} className="mr-2" />
-                  <span>Radar Analytics</span>
+                  <span>Competency Profile</span>
                 </h3>
                 <div className="space-y-5">
                     {Object.entries(scores).map(([key, value]) => (
@@ -250,7 +247,7 @@ const App = () => {
             <section className="pt-8 border-t border-white/5 space-y-6">
                 <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] flex items-center opacity-70">
                   <Target size={12} className="mr-2" />
-                  <span>Tactical Scenarios</span>
+                  <span>Case Study Domains</span>
                 </h3>
                 <div className="space-y-2 pb-6">
                     {Object.values(InterviewTopic).slice(0, 16).map(topic => (
@@ -273,19 +270,19 @@ const App = () => {
             <InterviewerAvatar isThinking={isThinking} onClick={() => setShowMenu(!showMenu)} />
             {showMenu && (
               <div className="absolute inset-0 z-[100] flex items-center justify-center pointer-events-none">
-                 <div className="pointer-events-auto w-[280px] bg-slate-900/90 backdrop-blur-3xl border border-white/10 rounded-3xl shadow-2xl p-5 ring-1 ring-blue-500/20">
+                 <div className="pointer-events-auto w-[280px] bg-slate-900/90 backdrop-blur-3xl border border-white/10 rounded-3xl shadow-2xl p-5 ring-1 ring-blue-500/20 animate-in fade-in zoom-in duration-300">
                     <div className="flex items-center justify-between mb-4 px-1 border-b border-white/5 pb-2">
-                        <span className="text-[9px] font-black text-blue-400 uppercase tracking-widest">Tactical Menu</span>
+                        <span className="text-[9px] font-black text-blue-400 uppercase tracking-widest">Expert Options</span>
                         <button onClick={() => setShowMenu(false)} className="text-slate-600 hover:text-white p-1">✕</button>
                     </div>
                     <div className="space-y-2">
                         <button onClick={() => triggerAction('answer')} className="w-full text-left p-3.5 bg-white/5 hover:bg-blue-600/10 rounded-2xl transition-all border border-white/5 flex items-center space-x-3">
                             <Maximize2 size={16} className="text-blue-500" />
-                            <p className="text-xs font-bold text-white uppercase tracking-wider">全栈解法建议</p>
+                            <p className="text-xs font-bold text-white uppercase tracking-wider">查看最优解决方案</p>
                         </button>
                         <button onClick={() => triggerAction('deeper')} className="w-full text-left p-3.5 bg-white/5 hover:bg-slate-800 rounded-2xl transition-all border border-white/5 flex items-center space-x-3">
                             <Zap size={16} className="text-amber-500" />
-                            <p className="text-xs font-bold text-white uppercase tracking-wider">逻辑极度深化</p>
+                            <p className="text-xs font-bold text-white uppercase tracking-wider">深度技术细节拆解</p>
                         </button>
                     </div>
                  </div>
@@ -302,17 +299,21 @@ const App = () => {
           <div className="p-4 border-b border-white/5 flex items-center bg-black/20 justify-between">
              <div className="flex items-center text-slate-500 space-x-2">
                 <Terminal size={14} className="text-blue-500" />
-                <span className="text-[9px] font-mono font-bold tracking-[0.4em] uppercase">Tactical_Stream</span>
+                <span className="text-[9px] font-mono font-bold tracking-[0.4em] uppercase">Interview_Stream</span>
+             </div>
+             <div className="flex space-x-1">
+                <div className="w-1.5 h-1.5 rounded-full bg-emerald-500/50"></div>
+                <div className="w-1.5 h-1.5 rounded-full bg-blue-500/50"></div>
              </div>
           </div>
 
           <div ref={scrollRef} className="flex-1 overflow-y-auto p-8 space-y-10 custom-scrollbar scroll-smooth">
             {messages.map((msg, idx) => (
-              <div key={idx} className={`flex flex-col ${msg.role === 'candidate' ? 'items-end' : 'items-start'} animate-in fade-in slide-in-from-bottom-2 duration-500`}>
+              <div key={idx} className={`flex flex-col ${msg.role === 'candidate' ? 'items-end' : 'items-start'} animate-in fade-in slide-in-from-bottom-2 duration-700`}>
                 <div className={`mb-3 text-[8px] font-mono uppercase tracking-widest ${msg.role === 'candidate' ? 'text-blue-500' : 'text-slate-500'}`}>
                     {msg.role === 'candidate' ? 'USR_CANDIDATE' : 'SYS_DR_XU'}
                 </div>
-                <div className={`max-w-[95%] px-6 py-4 rounded-2xl text-[14px] leading-relaxed whitespace-pre-wrap shadow-xl ${msg.role === 'candidate' ? 'bg-blue-600/10 text-slate-100 border border-blue-500/20' : 'bg-slate-900/40 text-slate-200 border border-white/5'}`}>
+                <div className={`max-w-[95%] px-6 py-4 rounded-2xl text-[14px] leading-relaxed whitespace-pre-wrap shadow-xl border ${msg.role === 'candidate' ? 'bg-blue-600/5 text-slate-100 border-blue-500/20' : 'bg-slate-900/40 text-slate-200 border-white/5 shadow-blue-900/10'}`}>
                   {msg.content || (isThinking && idx === messages.length - 1 ? <ThinkingDots /> : null)}
                 </div>
               </div>
@@ -320,12 +321,12 @@ const App = () => {
           </div>
 
           <div className="p-8 border-t border-white/5 bg-black/20">
-            <div className="bg-slate-900/40 border border-white/10 rounded-3xl p-3 focus-within:border-blue-500/30 transition-all shadow-2xl flex flex-col">
+            <div className="bg-slate-900/40 border border-white/10 rounded-3xl p-3 focus-within:border-blue-500/40 transition-all shadow-2xl flex flex-col">
                <textarea
                  value={inputText}
                  onChange={(e) => setInputText(e.target.value)}
                  onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
-                 placeholder="陈述你的战术见解..."
+                 placeholder="输入你的技术汇报..."
                  className="bg-transparent text-slate-200 text-sm p-4 outline-none resize-none min-h-[100px] custom-scrollbar placeholder:opacity-20"
                  disabled={isThinking || isResetting}
                />
@@ -333,9 +334,9 @@ const App = () => {
                   <button 
                     onClick={handleSend} 
                     disabled={!inputText.trim() || isThinking || isResetting} 
-                    className={`group flex items-center space-x-3 px-10 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all ${inputText.trim() && !isResetting ? 'bg-blue-600 text-white shadow-xl' : 'bg-slate-800 text-slate-600 cursor-not-allowed'}`}
+                    className={`group flex items-center space-x-3 px-10 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all ${inputText.trim() && !isResetting ? 'bg-blue-600 text-white shadow-[0_0_20px_rgba(37,99,235,0.4)]' : 'bg-slate-800 text-slate-600 cursor-not-allowed'}`}
                   >
-                    <span>发送汇报</span>
+                    <span>提交汇报</span>
                     <Send size={14} className="group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
                   </button>
                </div>
